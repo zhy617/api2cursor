@@ -3,6 +3,7 @@
 提供 Web 管理界面和 API：
   - /admin         — 管理面板页面
   - /v1/models     — 模型列表（供 Cursor 查询）
+  - /models        — 模型列表兼容入口
   - /api/admin/*   — 登录验证、全局设置 CRUD、模型映射 CRUD
 """
 
@@ -40,6 +41,7 @@ def static_files(filename):
 # ─── 模型列表 ─────────────────────────────────────
 
 
+@bp.route('/models', methods=['GET'])
 @bp.route('/v1/models', methods=['GET'])
 def list_models():
     """返回当前配置的模型列表，供 Cursor 拉取可用模型。"""

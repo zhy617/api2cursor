@@ -104,6 +104,7 @@ def _extract_responses_usage(event_data: dict[str, Any]) -> dict[str, Any] | Non
     return None
 
 
+@bp.route('/chat/completions', methods=['POST'])
 @bp.route('/v1/chat/completions', methods=['POST'])
 def chat_completions():
     """处理聊天补全请求并按模型映射分发到不同后端。"""

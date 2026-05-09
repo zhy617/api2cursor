@@ -50,12 +50,21 @@ cp .env.example .env
 python start.py
 ```
 
+默认会自动启动 ngrok 公网隧道。启动后终端会打印：
+
+```text
+Cursor Base URL: https://xxxx.ngrok-free.app
+公网管理面板: https://xxxx.ngrok-free.app/admin
+```
+
+Cursor 无法直接访问 `localhost` 或私人网络地址时，请在 Cursor 中填写这个公网 Base URL。
+
 ### Docker 部署
 
 ```bash
 cd api2cursor
 cp .env.example .env
-# 编辑 .env
+# 编辑 .env；如果容器里没有安装 ngrok，请设置 ENABLE_TUNNEL=false
 docker compose up -d
 ```
 
@@ -74,6 +83,27 @@ docker compose up -d
 | `ACCESS_API_KEY` | 访问鉴权密钥，留空不启用 | |
 | `DEBUG` | 兼容旧版调试开关，开启后等价于 `DEBUG_MODE=simple` | `false` |
 | `DEBUG_MODE` | 调试模式：`off` / `simple` / `verbose` | `off` |
+| `ENABLE_TUNNEL` | 是否自动启动公网隧道 | `true` |
+| `TUNNEL_PROVIDER` | 隧道提供方，当前仅支持 `ngrok` | `ngrok` |
+| `NGROK_COMMAND` | ngrok 命令路径 | `ngrok` |
+| `NGROK_API_URL` | ngrok 本地 agent API 地址 | `http://127.0.0.1:4040/api` |
+| `TUNNEL_STARTUP_TIMEOUT` | 等待公网链接创建的超时时间（秒） | `15` |
+
+### 公网隧道
+
+Cursor 可能无法访问 `http://localhost:3029`、`http://127.0.0.1:3029` 或 `192.168.x.x` 这类私人网络地址。本项目默认使用 ngrok 自动创建公网 HTTPS 链接，供 Cursor 访问本地代理。
+
+首次使用前需要安装并登录 ngrok：
+
+```bash
+ngrok config add-authtoken <your-ngrok-token>
+```
+
+公网隧道开启时必须配置 `ACCESS_API_KEY`，否则服务会拒绝启动，避免把代理公开成无鉴权 API。如果只想本地 curl 测试或部署在自己控制的公网服务器上，可以关闭隧道：
+
+```env
+ENABLE_TUNNEL=false
+```
 
 ### 模型映射
 
@@ -115,8 +145,8 @@ data/conversations/YYYY-MM-DD/{conversation_id}.json
 
 1. 打开 Cursor 设置 → Models
 2. 添加自定义模型，名称填映射中配置的 Cursor 模型名
-3. Override OpenAI Base URL 填 `http://localhost:3029`
-4. API Key 填 `ACCESS_API_KEY` 的值（未配置则随意填）
+3. Override OpenAI Base URL 填启动时打印的 `Cursor Base URL`，例如 `https://xxxx.ngrok-free.app`
+4. API Key 填 `ACCESS_API_KEY` 的值
 
 ## 项目结构
 

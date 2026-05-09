@@ -3,6 +3,34 @@
 import os
 
 
+_TRUE_VALUES = ('1', 'true', 'yes', 'on')
+_FALSE_VALUES = ('0', 'false', 'no', 'off')
+
+
+def _get_bool(name, default=False):
+    """读取布尔环境变量，无法识别时回退到默认值。"""
+    raw = os.getenv(name)
+    if raw is None or raw == '':
+        return default
+    value = raw.strip().lower()
+    if value in _TRUE_VALUES:
+        return True
+    if value in _FALSE_VALUES:
+        return False
+    return default
+
+
+def _get_float(name, default):
+    """读取浮点环境变量，无法解析时回退到默认值。"""
+    raw = os.getenv(name)
+    if raw is None or raw == '':
+        return default
+    try:
+        return float(raw)
+    except ValueError:
+        return default
+
+
 class Config:
     """集中声明服务运行依赖的环境变量配置。
 
@@ -20,6 +48,13 @@ class Config:
     API_TIMEOUT = int(os.getenv('API_TIMEOUT', '300'))
     # 访问鉴权密钥，留空则不启用鉴权
     ACCESS_API_KEY = os.getenv('ACCESS_API_KEY', '')
+
+    # 公网隧道配置。默认启用，方便 Cursor 从公网访问本地代理。
+    ENABLE_TUNNEL = _get_bool('ENABLE_TUNNEL', True)
+    TUNNEL_PROVIDER = os.getenv('TUNNEL_PROVIDER', 'ngrok').strip().lower()
+    NGROK_COMMAND = os.getenv('NGROK_COMMAND', 'ngrok')
+    NGROK_API_URL = os.getenv('NGROK_API_URL', 'http://127.0.0.1:4040/api')
+    TUNNEL_STARTUP_TIMEOUT = _get_float('TUNNEL_STARTUP_TIMEOUT', 15.0)
 
     # 调试模式分级：
     # - off: 关闭调试

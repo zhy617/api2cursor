@@ -70,6 +70,7 @@ def _dbg(message: str) -> None:
         logger.info('[响应生成调试] %s', message)
 
 
+@bp.route('/responses', methods=['POST'])
 @bp.route('/v1/responses', methods=['POST'])
 def responses_endpoint():
     """处理 Responses 请求并按模型映射分发。"""

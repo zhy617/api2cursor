@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 bp = Blueprint('messages', __name__)
 
 
+@bp.route('/messages', methods=['POST'])
 @bp.route('/v1/messages', methods=['POST'])
 def messages_passthrough():
     """透传 Anthropic Messages 请求，并在必要时补齐 thinking 兼容层。"""
