@@ -40,15 +40,46 @@ Cursor                         API 2 Cursor                           中转站
 
 ## 快速开始
 
-### 直接运行
+### Windows 直接运行
+
+PowerShell：
+
+```powershell
+cd api2cursor
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+Copy-Item .env.example .env
+# 编辑 .env 填入中转站地址和密钥
+python start.py
+```
+
+如果仓库里已经有可用的 `.venv`，可以直接执行：
+
+```powershell
+cd api2cursor
+.\.venv\Scripts\python.exe start.py
+```
+
+服务启动后访问 `http://localhost:3029/admin` 进入管理面板。
+
+### macOS 直接运行
+
+Terminal：
 
 ```bash
 cd api2cursor
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env
 # 编辑 .env 填入中转站地址和密钥
 python start.py
 ```
+
+服务启动后访问 `http://localhost:3029/admin` 进入管理面板。
+
+> 从 Windows 迁移到 macOS 时，不要复制 Windows 下的 `.venv`，请在 macOS 上重新创建虚拟环境。`.env` 可以复制，但如果里面有 Windows 路径（例如 `NGROK_COMMAND=C:\...`），需要改成 macOS 可用的命令或路径。
 
 默认会自动启动 ngrok 公网隧道。启动后终端会打印：
 
@@ -93,9 +124,19 @@ docker compose up -d
 
 Cursor 可能无法访问 `http://localhost:3029`、`http://127.0.0.1:3029` 或 `192.168.x.x` 这类私人网络地址。本项目默认使用 ngrok 自动创建公网 HTTPS 链接，供 Cursor 访问本地代理。
 
-首次使用前需要安装并登录 ngrok：
+首次使用前需要安装并登录 ngrok。
+
+Windows 可以从 ngrok 官网下载安装，或使用 winget：
+
+```powershell
+winget install ngrok.ngrok
+ngrok config add-authtoken <your-ngrok-token>
+```
+
+macOS 可以使用 Homebrew：
 
 ```bash
+brew install ngrok/ngrok/ngrok
 ngrok config add-authtoken <your-ngrok-token>
 ```
 
