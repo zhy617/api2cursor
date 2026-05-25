@@ -72,19 +72,58 @@ def _start_tunnel_if_enabled():
         raise RuntimeError(
             'ENABLE_TUNNEL=true 时必须配置 ACCESS_API_KEY，避免公开无鉴权代理。'
         )
-    if Config.TUNNEL_PROVIDER != 'ngrok':
-        raise RuntimeError(f'不支持的 TUNNEL_PROVIDER: {Config.TUNNEL_PROVIDER}')
-
-    from utils.tunnel import NgrokTunnel, local_tunnel_target
+    from utils.tunnel import (
+        CpolarTunnel,
+        CustomTunnel,
+        NatappTunnel,
+        NgrokTunnel,
+        local_tunnel_target,
+    )
 
     target_url = local_tunnel_target(_HOST, Config.PROXY_PORT)
-    print(f'正在启动 ngrok 隧道: {target_url}')
-    tunnel = NgrokTunnel(
-        target_url=target_url,
-        command=Config.NGROK_COMMAND,
-        api_url=Config.NGROK_API_URL,
-        startup_timeout=Config.TUNNEL_STARTUP_TIMEOUT,
-    )
+    provider = Config.TUNNEL_PROVIDER
+    print(f'正在启动 {provider} 隧道: {target_url}')
+
+    if provider == 'ngrok':
+        tunnel = NgrokTunnel(
+            target_url=target_url,
+            command=Config.NGROK_COMMAND,
+            api_url=Config.NGROK_API_URL,
+            startup_timeout=Config.TUNNEL_STARTUP_TIMEOUT,
+        )
+    elif provider == 'cpolar':
+        tunnel = CpolarTunnel(
+            port=Config.PROXY_PORT,
+            target_url=target_url,
+            command=Config.CPOLAR_COMMAND,
+            region=Config.CPOLAR_REGION,
+            api_url=Config.CPOLAR_API_URL,
+            startup_timeout=Config.TUNNEL_STARTUP_TIMEOUT,
+        )
+    elif provider == 'natapp':
+        tunnel = NatappTunnel(
+            target_url=target_url,
+            command=Config.NATAPP_COMMAND,
+            authtoken=Config.NATAPP_AUTHTOKEN,
+            config_path=Config.NATAPP_CONFIG,
+            public_url=Config.NATAPP_PUBLIC_URL,
+            startup_timeout=Config.TUNNEL_STARTUP_TIMEOUT,
+        )
+    elif provider == 'custom':
+        tunnel = CustomTunnel(
+            command_template=Config.CUSTOM_TUNNEL_COMMAND,
+            host='127.0.0.1',
+            port=Config.PROXY_PORT,
+            target_url=target_url,
+            public_url=Config.CUSTOM_TUNNEL_PUBLIC_URL,
+            url_pattern=Config.CUSTOM_TUNNEL_URL_PATTERN,
+            startup_timeout=Config.TUNNEL_STARTUP_TIMEOUT,
+        )
+    else:
+        raise RuntimeError(
+            f'不支持的 TUNNEL_PROVIDER: {provider}。'
+            '可选值: ngrok / cpolar / natapp / custom'
+        )
     return tunnel, tunnel.start()
 
 

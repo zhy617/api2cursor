@@ -81,11 +81,11 @@ python start.py
 
 > 从 Windows 迁移到 macOS 时，不要复制 Windows 下的 `.venv`，请在 macOS 上重新创建虚拟环境。`.env` 可以复制，但如果里面有 Windows 路径（例如 `NGROK_COMMAND=C:\...`），需要改成 macOS 可用的命令或路径。
 
-默认会自动启动 ngrok 公网隧道。启动后终端会打印：
+默认会自动启动公网隧道。`.env.example` 默认使用 `cpolar`，在国内网络下通常比 ngrok 更容易直连。启动后终端会打印：
 
 ```text
-Cursor Base URL: https://xxxx.ngrok-free.app
-公网管理面板: https://xxxx.ngrok-free.app/admin
+Cursor Base URL: https://xxxx.example-tunnel.com
+公网管理面板: https://xxxx.example-tunnel.com/admin
 ```
 
 Cursor 无法直接访问 `localhost` 或私人网络地址时，请在 Cursor 中填写这个公网 Base URL。
@@ -95,7 +95,7 @@ Cursor 无法直接访问 `localhost` 或私人网络地址时，请在 Cursor �
 ```bash
 cd api2cursor
 cp .env.example .env
-# 编辑 .env；如果容器里没有安装 ngrok，请设置 ENABLE_TUNNEL=false
+# 编辑 .env；如果容器里没有安装隧道客户端，请设置 ENABLE_TUNNEL=false
 docker compose up -d
 ```
 
@@ -115,14 +115,92 @@ docker compose up -d
 | `DEBUG` | 兼容旧版调试开关，开启后等价于 `DEBUG_MODE=simple` | `false` |
 | `DEBUG_MODE` | 调试模式：`off` / `simple` / `verbose` | `off` |
 | `ENABLE_TUNNEL` | 是否自动启动公网隧道 | `true` |
-| `TUNNEL_PROVIDER` | 隧道提供方，当前仅支持 `ngrok` | `ngrok` |
+| `TUNNEL_PROVIDER` | 隧道提供方：`cpolar` / `natapp` / `ngrok` / `custom` | `cpolar` |
 | `NGROK_COMMAND` | ngrok 命令路径 | `ngrok` |
 | `NGROK_API_URL` | ngrok 本地 agent API 地址 | `http://127.0.0.1:4040/api` |
+| `CPOLAR_COMMAND` | cpolar 命令路径 | `cpolar` |
+| `CPOLAR_REGION` | cpolar 节点区域，留空使用默认节点；例如 `cn_vip` | |
+| `CPOLAR_API_URL` | cpolar 本地 agent API 地址 | `http://127.0.0.1:4040/api` |
+| `NATAPP_COMMAND` | NATAPP 命令路径 | `natapp` |
+| `NATAPP_AUTHTOKEN` | NATAPP 隧道 authtoken | |
+| `NATAPP_CONFIG` | NATAPP `config.ini` 路径，配置后优先于 `NATAPP_AUTHTOKEN` | |
+| `NATAPP_PUBLIC_URL` | NATAPP 固定公网地址；如果客户端输出无法自动识别，可手动填写 | |
+| `CUSTOM_TUNNEL_COMMAND` | 自定义隧道启动命令，支持 `{host}` / `{port}` / `{target_url}` 占位符 | |
+| `CUSTOM_TUNNEL_PUBLIC_URL` | 自定义隧道固定公网地址 | |
+| `CUSTOM_TUNNEL_URL_PATTERN` | 从自定义命令输出中提取公网地址的正则 | |
 | `TUNNEL_STARTUP_TIMEOUT` | 等待公网链接创建的超时时间（秒） | `15` |
 
 ### 公网隧道
 
-Cursor 可能无法访问 `http://localhost:3029`、`http://127.0.0.1:3029` 或 `192.168.x.x` 这类私人网络地址。本项目默认使用 ngrok 自动创建公网 HTTPS 链接，供 Cursor 访问本地代理。
+Cursor 可能无法访问 `http://localhost:3029`、`http://127.0.0.1:3029` 或 `192.168.x.x` 这类私人网络地址。本项目可以自动启动公网隧道，供 Cursor 访问本地代理。
+
+#### cpolar（国内推荐）
+
+macOS 可以用 Homebrew 安装并登录：
+
+```bash
+brew tap probezy/core && brew install cpolar
+cpolar authtoken <your-cpolar-token>
+```
+
+Linux 可以用官方安装脚本：
+
+```bash
+curl -L https://www.cpolar.com/static/downloads/install-release-cpolar.sh | sudo bash
+cpolar authtoken <your-cpolar-token>
+```
+
+Windows 可以从 cpolar 官网下载安装包，安装后执行：
+
+```powershell
+cpolar authtoken <your-cpolar-token>
+```
+
+然后把 `.env` 设置为：
+
+```env
+ENABLE_TUNNEL=true
+TUNNEL_PROVIDER=cpolar
+CPOLAR_COMMAND=cpolar
+CPOLAR_REGION=
+```
+
+启动项目：
+
+```bash
+python start.py
+```
+
+项目会自动执行类似 `cpolar http 3029` 的命令，并从 cpolar 输出或本地 agent API 中提取 HTTPS 公网地址。需要指定国内节点时可以配置：
+
+```env
+CPOLAR_REGION=cn_vip
+```
+
+#### NATAPP
+
+NATAPP 的本地端口通常在 NATAPP 控制台的隧道配置中设置。先购买/创建 Web 隧道并复制 authtoken，然后配置：
+
+```env
+ENABLE_TUNNEL=true
+TUNNEL_PROVIDER=natapp
+NATAPP_COMMAND=natapp
+NATAPP_AUTHTOKEN=你的-authtoken
+```
+
+如果使用 `config.ini`：
+
+```env
+NATAPP_CONFIG=/path/to/config.ini
+```
+
+如果客户端输出无法自动识别公网地址，可以手动填写：
+
+```env
+NATAPP_PUBLIC_URL=https://xxxx.natappfree.cc
+```
+
+#### ngrok
 
 首次使用前需要安装并登录 ngrok。
 
@@ -145,6 +223,19 @@ ngrok config add-authtoken <your-ngrok-token>
 ```env
 ENABLE_TUNNEL=false
 ```
+
+#### 自定义隧道
+
+如果使用 frp、Cloudflare Tunnel 或其他服务，可以用 `custom` provider 接入：
+
+```env
+ENABLE_TUNNEL=true
+TUNNEL_PROVIDER=custom
+CUSTOM_TUNNEL_COMMAND=你的命令 --port {port}
+CUSTOM_TUNNEL_PUBLIC_URL=https://你的固定公网地址
+```
+
+如果公网地址由命令输出动态生成，可以不填 `CUSTOM_TUNNEL_PUBLIC_URL`，改用 `CUSTOM_TUNNEL_URL_PATTERN` 指定正则；不指定时会自动从输出中提取第一个 `http://` 或 `https://` 地址。
 
 ### 模型映射
 
@@ -186,7 +277,7 @@ data/conversations/YYYY-MM-DD/{conversation_id}.json
 
 1. 打开 Cursor 设置 → Models
 2. 添加自定义模型，名称填映射中配置的 Cursor 模型名
-3. Override OpenAI Base URL 填启动时打印的 `Cursor Base URL`，例如 `https://xxxx.ngrok-free.app`
+3. Override OpenAI Base URL 填启动时打印的 `Cursor Base URL`，例如 `https://xxxx.example-tunnel.com`
 4. API Key 填 `ACCESS_API_KEY` 的值
 
 ## 项目结构

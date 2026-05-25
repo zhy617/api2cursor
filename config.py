@@ -51,9 +51,19 @@ class Config:
 
     # 公网隧道配置。默认启用，方便 Cursor 从公网访问本地代理。
     ENABLE_TUNNEL = _get_bool('ENABLE_TUNNEL', True)
-    TUNNEL_PROVIDER = os.getenv('TUNNEL_PROVIDER', 'ngrok').strip().lower()
+    TUNNEL_PROVIDER = os.getenv('TUNNEL_PROVIDER', 'cpolar').strip().lower()
     NGROK_COMMAND = os.getenv('NGROK_COMMAND', 'ngrok')
     NGROK_API_URL = os.getenv('NGROK_API_URL', 'http://127.0.0.1:4040/api')
+    CPOLAR_COMMAND = os.getenv('CPOLAR_COMMAND', 'cpolar')
+    CPOLAR_REGION = os.getenv('CPOLAR_REGION', '').strip()
+    CPOLAR_API_URL = os.getenv('CPOLAR_API_URL', 'http://127.0.0.1:4040/api')
+    NATAPP_COMMAND = os.getenv('NATAPP_COMMAND', 'natapp')
+    NATAPP_AUTHTOKEN = os.getenv('NATAPP_AUTHTOKEN', '').strip()
+    NATAPP_CONFIG = os.getenv('NATAPP_CONFIG', '').strip()
+    NATAPP_PUBLIC_URL = os.getenv('NATAPP_PUBLIC_URL', '').strip()
+    CUSTOM_TUNNEL_COMMAND = os.getenv('CUSTOM_TUNNEL_COMMAND', '').strip()
+    CUSTOM_TUNNEL_PUBLIC_URL = os.getenv('CUSTOM_TUNNEL_PUBLIC_URL', '').strip()
+    CUSTOM_TUNNEL_URL_PATTERN = os.getenv('CUSTOM_TUNNEL_URL_PATTERN', '').strip()
     TUNNEL_STARTUP_TIMEOUT = _get_float('TUNNEL_STARTUP_TIMEOUT', 15.0)
 
     # 调试模式分级：
